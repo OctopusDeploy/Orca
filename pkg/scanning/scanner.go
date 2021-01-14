@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/go-github/v33/github"
-	"log"
+	"github.com/rs/zerolog/log"
 	"strings"
 	"Orca/pkg/caching"
 )
@@ -75,7 +75,7 @@ func (scanner *Scanner) CheckFileContentFromQueries(
 			continue
 		}
 
-		log.Printf("Checking %s from %s", fileQuery.FileName, fileQuery.CommitSHA)
+		log.Info().Msgf("Checking %s from %s", fileQuery.FileName, fileQuery.CommitSHA)
 
 		fileContentMatches, err := scanner.CheckFileContentFromQuery(githubClient, fileQuery)
 		if err != nil {

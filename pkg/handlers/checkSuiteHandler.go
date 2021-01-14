@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/go-github/v33/github"
-	"log"
+	"github.com/rs/zerolog/log"
 )
 
 type checkRunStatus string
@@ -23,10 +23,10 @@ const (
 // BUG: This will trigger a failure even if the issue has been fixed in a more recent commit
 
 func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckSuiteEvent) {
-	log.Println("Handling Check Suite request...")
+	log.Info().Msgf("Handling Check Suite request...")
 
 	// Create a new Check Run
-	log.Println("Creating new check run")
+	log.Info().Msgf("Creating new check run")
 	inProgressString := string(checkRunStatusInProgress)
 	checkRun, _, err := handler.GitHubClient.Checks.CreateCheckRun(
 		context.Background(),
@@ -38,7 +38,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 			Status:  &inProgressString,
 		})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 		return
 	}
 
@@ -115,7 +115,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 				//	viewed in the commit history
 				var conclusion checkRunConclusion
 				if AllMatchesAreResolved(commitScanResults) {
-					log.Printf("Matches found but resolved in pull request #%d. Passing check with reminder.\n", pullRequest.Number)
+					log.Info().Msgf("Matches found but resolved in pull request #%d. Passing check with reminder.\n", pullRequest.Number)
 					conclusion = checkRunConclusionSuccess
 
 					// Reply with reminder
@@ -136,7 +136,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 						return
 					}
 				} else {
-					log.Printf("Potentially sensitive information detected in pull request #%d. Failing check.\n", pullRequest.Number)
+					log.Info().Msgf("Potentially sensitive information detected in pull request #%d. Failing check.\n", pullRequest.Number)
 					conclusion = checkRunConclusionFailure
 				}
 
@@ -145,7 +145,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 
 				return
 			} else {
-				log.Printf("No matches to address in pull request #%d.\n", pullRequest.Number)
+				log.Info().Msgf("No matches to address in pull request #%d.\n", pullRequest.Number)
 			}
 		}
 
@@ -157,7 +157,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 			checkRunConclusionSkipped,
 			"No Pull Requests found. Orca Checks are currently only supported from Pull Requests",
 			nil)
-		log.Println("No pull requests. Skipping.")
+		log.Info().Msg("No pull requests. Skipping.")
 	}
 }
 
@@ -168,7 +168,7 @@ func (handler *PayloadHandler) handleFailure(checkRun *github.CheckRun, summary 
 		checkRunConclusionFailure,
 		summary,
 		nil)
-	log.Fatal(err)
+	log.Fatal().Err(err)
 }
 
 func (handler *PayloadHandler) completeCheckRun(checkRun *github.CheckRun, conclusion checkRunConclusion, summary string, text *string) {
@@ -209,7 +209,7 @@ func (handler *PayloadHandler) updateCheckRun(
 	if err != nil {
 		// TODO: At this point we're going to have an abandoned check,
 		// 	need to persist these checks somewhere so we can clean them up after a failure
-		log.Fatalf("Could not mark check run as failed: %v", err)
+		log.Fatal().Msgf("Could not mark check run as failed: %v", err)
 	}
 }
 

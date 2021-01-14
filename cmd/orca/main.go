@@ -8,7 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/urfave/cli/v2"
-	"log"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
 	"strings"
@@ -23,6 +24,7 @@ func main() {
 	var secret string
 	var appId int
 	var patternsLocation string
+	var showDebugLogs bool
 
 	app := &cli.App{
 		Name:  "Orca",
@@ -78,6 +80,12 @@ func main() {
 				Usage:       "The location of the patterns to check for. Accepts a file path or HTTP URL.",
 				Destination: &patternsLocation,
 			},
+			&cli.BoolFlag{
+				Name:        "show-debug-logs",
+				Aliases:     []string{"d"},
+				Usage:       "Show debug logs.",
+				Destination: &showDebugLogs,
+			},
 		},
 		Action: func(c *cli.Context) error {
 
@@ -126,11 +134,16 @@ func main() {
 				return err
 			}
 
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+			if showDebugLogs {
+				zerolog.SetGlobalLevel(zerolog.DebugLevel)
+			}
+
 			// Setup webhook handlers
 			webHookHandler := handlers.NewWebhookHandler(path, appId, &patternStore, privateKey, secret)
 
 			// Start HTTP webhooks
-			log.Printf("Starting webhooks at port %d\n", port)
+			log.Info().Msgf("Starting webhooks at port %d\n", port)
 			var address = fmt.Sprintf(":%d", port)
 			if err := http.ListenAndServe(address, webHookHandler); err != nil {
 				return err
@@ -141,6 +154,6 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 	}
 }

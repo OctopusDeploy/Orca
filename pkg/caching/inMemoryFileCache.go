@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"github.com/google/go-github/v33/github"
-	"log"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -100,7 +100,7 @@ func GetFile(query GitHubFileQuery, client *github.Client) (*File, error) {
 
 		// If the file was not removed, then we can go ahead and get it's content and permalink
 		if query.Status != FileRemoved {
-			log.Printf("%s from %s not available in cache, fetching from API\n", query.FileName, query.CommitSHA)
+			log.Info().Msgf("%s from %s not available in cache, fetching from API\n", query.FileName, query.CommitSHA)
 			content, _, _, err := client.Repositories.GetContents(
 				context.Background(),
 				query.RepoOwner,
@@ -125,7 +125,7 @@ func GetFile(query GitHubFileQuery, client *github.Client) (*File, error) {
 
 		cache.addFile(*file)
 	} else {
-		log.Printf("%s from %s fetched from cache\n", query.FileName, query.CommitSHA)
+		log.Info().Msgf("%s from %s fetched from cache\n", query.FileName, query.CommitSHA)
 	}
 
 	return file, nil

@@ -4,7 +4,7 @@ import (
 	"Orca/pkg/scanning"
 	"crypto/rsa"
 	"github.com/google/go-github/v33/github"
-	"log"
+	"github.com/rs/zerolog/log"
 	"net/http"
 )
 
@@ -38,7 +38,7 @@ func (webHookHandler *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 	err := webHookHandler.handleWebHookRequest(r)
 	if err != nil {
 		http.Error(w, "failed to handle payload", http.StatusBadRequest)
-		log.Fatalf("failed to handle payload: %v", err)
+		log.Fatal().Msgf("failed to handle payload: %v", err)
 	}
 
 	w.WriteHeader(http.StatusOK)
