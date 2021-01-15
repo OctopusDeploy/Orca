@@ -23,10 +23,14 @@ const (
 // BUG: This will trigger a failure even if the issue has been fixed in a more recent commit
 
 func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckSuiteEvent) {
-	log.Info().Msgf("Handling Check Suite request...")
+	log.Info().Msgf(
+		"Handling check suite event from %s/%s (%d)",
+		*checkSuitePayload.Repo.Owner.Login,
+		*checkSuitePayload.Repo.Name,
+		*checkSuitePayload.CheckSuite.ID)
 
 	// Create a new Check Run
-	log.Info().Msgf("Creating new check run")
+	log.Debug().Msg("Creating new check run")
 	inProgressString := string(checkRunStatusInProgress)
 	checkRun, _, err := handler.GitHubClient.Checks.CreateCheckRun(
 		context.Background(),
@@ -38,9 +42,10 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 			Status:  &inProgressString,
 		})
 	if err != nil {
-		log.Fatal().Err(err)
+		log.Error().Err(err)
 		return
 	}
+	log.Debug().Msgf("Check run %d created", checkRun.ID)
 
 	// Bring over some of the properties we want to access later
 	checkRun.CheckSuite.Repository = checkSuitePayload.Repo
@@ -55,7 +60,10 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 				*pullRequest.Number,
 				nil)
 			if err != nil {
-				handler.handleFailure(checkRun, "Failed to list commits from Pull Request", err)
+				handler.handleFailure(
+					checkRun,
+					fmt.Sprintf("Failed to get commits from pull request #%d", pullRequest.Number),
+					err)
 				return
 			}
 
@@ -74,7 +82,10 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 					*checkSuitePayload.Repo.Name,
 					*commitSha)
 				if err != nil {
-					handler.handleFailure(checkRun, "Failed to get commit from Pull Request", err)
+					handler.handleFailure(
+						checkRun,
+						fmt.Sprintf("Failed to get commit %s from pull request #%d", *commitSha, pullRequest.Number),
+						err)
 					return
 				}
 
@@ -103,7 +114,10 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 				handler.GitHubClient,
 				fileQueries)
 			if err != nil {
-				handler.handleFailure(checkRun, "Failed to scan commits from Pull Request", err)
+				handler.handleFailure(
+					checkRun,
+					fmt.Sprintf("Failed to scan commits from pull request #%d", pullRequest.Number),
+					err)
 				return
 			}
 
@@ -115,7 +129,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 				//	viewed in the commit history
 				var conclusion checkRunConclusion
 				if AllMatchesAreResolved(commitScanResults) {
-					log.Info().Msgf("Matches found but resolved in pull request #%d. Passing check with reminder.\n", pullRequest.Number)
+					log.Info().Msgf("Matches found but resolved in pull request #%d, passing check with reminder", pullRequest.Number)
 					conclusion = checkRunConclusionSuccess
 
 					// Reply with reminder
@@ -136,7 +150,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 						return
 					}
 				} else {
-					log.Info().Msgf("Potentially sensitive information detected in pull request #%d. Failing check.\n", pullRequest.Number)
+					log.Debug().Msg("Potentially sensitive information detected, failing check")
 					conclusion = checkRunConclusionFailure
 				}
 
@@ -145,7 +159,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 
 				return
 			} else {
-				log.Info().Msgf("No matches to address in pull request #%d.\n", pullRequest.Number)
+				log.Debug().Msg("No matches to address")
 			}
 		}
 
@@ -157,7 +171,7 @@ func (handler *PayloadHandler) HandleCheckSuite(checkSuitePayload *github.CheckS
 			checkRunConclusionSkipped,
 			"No Pull Requests found. Orca Checks are currently only supported from Pull Requests",
 			nil)
-		log.Info().Msg("No pull requests. Skipping.")
+		log.Info().Msg("No pull request exists, skipping")
 	}
 }
 
@@ -168,7 +182,7 @@ func (handler *PayloadHandler) handleFailure(checkRun *github.CheckRun, summary 
 		checkRunConclusionFailure,
 		summary,
 		nil)
-	log.Fatal().Err(err)
+	log.Error().Msgf("Check run %d failed: %v", checkRun.ID, err)
 }
 
 func (handler *PayloadHandler) completeCheckRun(checkRun *github.CheckRun, conclusion checkRunConclusion, summary string, text *string) {
@@ -178,6 +192,7 @@ func (handler *PayloadHandler) completeCheckRun(checkRun *github.CheckRun, concl
 		conclusion,
 		summary,
 		text)
+	log.Debug().Msgf("Check run %d completed with conclusion \"%s\"", checkRun.ID, conclusion)
 }
 
 func (handler *PayloadHandler) updateCheckRun(
@@ -209,7 +224,7 @@ func (handler *PayloadHandler) updateCheckRun(
 	if err != nil {
 		// TODO: At this point we're going to have an abandoned check,
 		// 	need to persist these checks somewhere so we can clean them up after a failure
-		log.Fatal().Msgf("Could not mark check run as failed: %v", err)
+		log.Error().Msgf("Failed to update check run %d: %v", checkRun.ID, err)
 	}
 }
 

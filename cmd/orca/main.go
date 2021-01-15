@@ -135,6 +135,7 @@ func main() {
 			}
 
 			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+			log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 			if showDebugLogs {
 				zerolog.SetGlobalLevel(zerolog.DebugLevel)
 			}
@@ -143,7 +144,7 @@ func main() {
 			webHookHandler := handlers.NewWebhookHandler(path, appId, &patternStore, privateKey, secret)
 
 			// Start HTTP webhooks
-			log.Info().Msgf("Starting webhooks at port %d\n", port)
+			log.Info().Msgf("Starting webhooks at port %d", port)
 			var address = fmt.Sprintf(":%d", port)
 			if err := http.ListenAndServe(address, webHookHandler); err != nil {
 				return err

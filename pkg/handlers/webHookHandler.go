@@ -38,7 +38,7 @@ func (webHookHandler *WebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.R
 	err := webHookHandler.handleWebHookRequest(r)
 	if err != nil {
 		http.Error(w, "failed to handle payload", http.StatusBadRequest)
-		log.Fatal().Msgf("failed to handle payload: %v", err)
+		log.Error().Msgf("Failed to handle webhook request: %v", err)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -55,6 +55,7 @@ func (webHookHandler *WebhookHandler) handleWebHookRequest(r *http.Request) erro
 	// NOTE: github.ParseWebHook will return a pointer to the webhook payload
 	//	Type switches need to switch on pointers of the desired type otherwise they won't work
 	webHookType := github.WebHookType(r)
+
 	parsedPayload, err := github.ParseWebHook(webHookType, body)
 	if err != nil {
 		return err
@@ -156,6 +157,9 @@ func (webHookHandler *WebhookHandler) handleWebHookRequest(r *http.Request) erro
 
 			payloadHandler.HandleCheckSuite(payload)
 		}
+
+	default:
+		log.Info().Msgf("Received webhook type %s but no handlers can handle the request", webHookType)
 	}
 
 	return nil

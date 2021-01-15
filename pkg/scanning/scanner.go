@@ -1,12 +1,12 @@
 package scanning
 
 import (
+	"Orca/pkg/caching"
 	"errors"
 	"fmt"
 	"github.com/google/go-github/v33/github"
 	"github.com/rs/zerolog/log"
 	"strings"
-	"Orca/pkg/caching"
 )
 
 type FileContentMatch struct {
@@ -75,7 +75,7 @@ func (scanner *Scanner) CheckFileContentFromQueries(
 			continue
 		}
 
-		log.Info().Msgf("Checking %s from %s", fileQuery.FileName, fileQuery.CommitSHA)
+		log.Debug().Msgf("Checking %s from %s", fileQuery.FileName, fileQuery.CommitSHA)
 
 		fileContentMatches, err := scanner.CheckFileContentFromQuery(githubClient, fileQuery)
 		if err != nil {

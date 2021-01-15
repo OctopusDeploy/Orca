@@ -24,7 +24,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPush(
 
 	// Open a new issue
 	title, body := BuildMessage(results)
-	log.Info().Msgf("Opening a new issue \"%s\"\n", title)
+	log.Info().Msg("Opening a new issue")
 	issue, _, err := matchHandler.GitHubApiClient.Issues.Create(
 		context.Background(),
 		*pushPayload.Repo.Owner.Login,
@@ -38,7 +38,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPush(
 		return err
 	}
 
-	log.Info().Msgf("Issue #%d opened\n", issue.Number)
+	log.Info().Msgf("Issue #%d opened", issue.Number)
 
 	return nil
 }
@@ -47,7 +47,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromIssue(
 	issue *github.IssuesEvent,
 	result *scanning.IssueScanResult) error {
 
-	log.Info().Msgf("Redacting matches from #%d\n", issue.Issue.Number)
+	log.Info().Msgf("Redacting matches from #%d", issue.Issue.Number)
 	newBody := redactMatchesFromContent(*issue.Issue.Body, result.Matches, '*')
 
 	// Replace the issue body with the new body with redacted matches
@@ -62,7 +62,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromIssue(
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("Matches from #%d redacted\n", issue.Issue.Number)
+	log.Info().Msgf("Matches from #%d redacted", issue.Issue.Number)
 
 	return nil
 }
@@ -71,7 +71,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromIssueComment(
 	issue *github.IssueCommentEvent,
 	result *scanning.IssueScanResult) error {
 
-	log.Info().Msgf("Redacting matches from #%d (comment %d)\n", issue.Issue.Number, issue.Comment.ID)
+	log.Info().Msgf("Redacting matches from #%d (comment %d)", issue.Issue.Number, issue.Comment.ID)
 	newBody := redactMatchesFromContent(*issue.Comment.Body, result.Matches, '*')
 
 	// Replace the issue body with the new body with redacted matches
@@ -86,7 +86,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromIssueComment(
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("Matches from #%d (comment %d) redacted\n", issue.Issue.Number, issue.Comment.ID)
+	log.Info().Msgf("Matches from #%d (comment %d) redacted", issue.Issue.Number, issue.Comment.ID)
 
 	return nil
 }
@@ -95,7 +95,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPullRequest(
 	request *github.PullRequestEvent,
 	result *scanning.PullRequestScanResult) error {
 
-	log.Info().Msgf("Redacting matches from #%d\n", request.PullRequest.Number)
+	log.Info().Msgf("Redacting matches from #%d", request.PullRequest.Number)
 
 	newBody := redactMatchesFromContent(*request.PullRequest.Body, result.Matches, '*')
 
@@ -111,7 +111,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPullRequest(
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("Matches from #%d redacted\n", request.PullRequest.Number)
+	log.Info().Msgf("Matches from #%d redacted", request.PullRequest.Number)
 
 	return nil
 }
@@ -120,7 +120,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPullRequestReview(
 	request *github.PullRequestReviewEvent,
 	result *scanning.PullRequestReviewScanResult) error {
 
-	log.Info().Msgf("Redacting matches from #%d (review %d)\n", request.PullRequest.Number, request.Review.ID)
+	log.Info().Msgf("Redacting matches from #%d (review %d)", request.PullRequest.Number, request.Review.ID)
 
 	newBody := redactMatchesFromContent(*request.Review.Body, result.Matches, '*')
 
@@ -135,7 +135,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPullRequestReview(
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("Matches from #%d redacted (review %d)\n", request.PullRequest.Number, request.Review.ID)
+	log.Info().Msgf("Matches from #%d redacted (review %d)", request.PullRequest.Number, request.Review.ID)
 
 	return nil
 }
@@ -145,7 +145,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPullRequestReviewComment(
 	result *scanning.PullRequestReviewCommentScanResult) error {
 
 	log.Info().Msgf(
-		"Redacting matches from #%d (review %d, comment %d)\n",
+		"Redacting matches from #%d (review %d, comment %d)",
 		request.PullRequest.Number,
 		request.Comment.InReplyTo,
 		request.Comment.ID)
@@ -165,7 +165,7 @@ func (matchHandler *MatchHandler) HandleMatchesFromPullRequestReviewComment(
 		return err
 	}
 	log.Info().Msgf(
-		"Matches from #%d redacted (review %d, comment %d)\n",
+		"Matches from #%d redacted (review %d, comment %d)",
 		request.PullRequest.Number,
 		request.Comment.InReplyTo,
 		request.Comment.ID)
